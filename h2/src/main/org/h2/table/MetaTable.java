@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Set;
 
 import org.h2.command.Command;
 import org.h2.constraint.Constraint;
@@ -1561,7 +1562,7 @@ public class MetaTable extends Table {
                     continue;
                 }
                 DbObject grantee = r.getGrantee();
-                int mask = r.getRightMask();
+                Set<Right.Grant> mask = r.getRightMask();
                 for (Column column : table.getColumns()) {
                     addPrivileges(rows, grantee, catalog, table,
                             column.getName(), mask);
@@ -2207,17 +2208,17 @@ public class MetaTable extends Table {
     }
 
     private void addPrivileges(ArrayList<Row> rows, DbObject grantee,
-            String catalog, Table table, String column, int rightMask) {
-        if ((rightMask & Right.SELECT) != 0) {
+            String catalog, Table table, String column, Set<Right.Grant> rightMask) {
+        if (rightMask.contains(Right.Grant.SELECT)) {
             addPrivilege(rows, grantee, catalog, table, column, "SELECT");
         }
-        if ((rightMask & Right.INSERT) != 0) {
+        if (rightMask.contains(Right.Grant.INSERT)) {
             addPrivilege(rows, grantee, catalog, table, column, "INSERT");
         }
-        if ((rightMask & Right.UPDATE) != 0) {
+        if (rightMask.contains(Right.Grant.UPDATE)) {
             addPrivilege(rows, grantee, catalog, table, column, "UPDATE");
         }
-        if ((rightMask & Right.DELETE) != 0) {
+        if (rightMask.contains(Right.Grant.DELETE)) {
             addPrivilege(rows, grantee, catalog, table, column, "DELETE");
         }
     }

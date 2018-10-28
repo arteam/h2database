@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.h2.table.Table;
 
@@ -65,20 +66,20 @@ public abstract class RightOwner extends DbObjectBase {
      * @param rightMask the right mask to check
      * @return true if the right was already granted
      */
-    boolean isRightGrantedRecursive(Table table, int rightMask) {
+    boolean isRightGrantedRecursive(Table table, Set<Right.Grant> rightMask) {
         Right right;
         if (grantedRights != null) {
             if (table != null) {
                 right = grantedRights.get(table.getSchema());
                 if (right != null) {
-                    if ((right.getRightMask() & rightMask) == rightMask) {
+                    if (right.getRightMask().containsAll(rightMask)) {
                         return true;
                     }
                 }
             }
             right = grantedRights.get(table);
             if (right != null) {
-                if ((right.getRightMask() & rightMask) == rightMask) {
+                if (right.getRightMask().containsAll(rightMask)) {
                     return true;
                 }
             }

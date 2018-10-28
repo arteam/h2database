@@ -7,6 +7,7 @@ package org.h2.engine;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Set;
 
 import org.h2.api.ErrorCode;
 import org.h2.message.DbException;
@@ -96,7 +97,7 @@ public class User extends RightOwner {
      * @param rightMask the rights required
      * @throws DbException if this user does not have the required rights
      */
-    public void checkRight(Table table, int rightMask) {
+    public void checkRight(Table table, Set<Right.Grant> rightMask) {
         if (!hasRight(table, rightMask)) {
             throw DbException.get(ErrorCode.NOT_ENOUGH_RIGHTS_FOR_1, table.getSQL());
         }
@@ -109,8 +110,8 @@ public class User extends RightOwner {
      * @param rightMask the rights required
      * @return true if the user has the rights
      */
-    public boolean hasRight(Table table, int rightMask) {
-        if (rightMask != Right.SELECT && !systemUser && table != null) {
+    public boolean hasRight(Table table, Set<Right.Grant> rightMask) {
+        if (!rightMask.equals(Right.SELECT) && !systemUser && table != null) {
             table.checkWritingAllowed();
         }
         if (admin) {

@@ -6,6 +6,8 @@
 package org.h2.command.ddl;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Set;
 
 import org.h2.api.ErrorCode;
 import org.h2.command.CommandInterface;
@@ -31,7 +33,7 @@ public class GrantRevoke extends DefineCommand {
 
     private ArrayList<String> roleNames;
     private int operationType;
-    private int rightMask;
+    private Set<Right.Grant> rightMask = EnumSet.noneOf(Right.Grant.class);
     private final ArrayList<Table> tables = Utils.newSmallArrayList();
     private Schema schema;
     private RightOwner grantee;
@@ -49,8 +51,8 @@ public class GrantRevoke extends DefineCommand {
      *
      * @param right the right bit
      */
-    public void addRight(int right) {
-        this.rightMask |= right;
+    public void addRight(Set<Right.Grant> right) {
+        this.rightMask.addAll(right);
     }
 
     /**
@@ -125,7 +127,7 @@ public class GrantRevoke extends DefineCommand {
             grantee.grantRight(object, right);
             db.addDatabaseObject(session, right);
         } else {
-            right.setRightMask(right.getRightMask() | rightMask);
+            right.getRightMask().addAll(rightMask);
             db.updateMeta(session, right);
         }
     }
@@ -162,13 +164,11 @@ public class GrantRevoke extends DefineCommand {
         if (right == null) {
             return;
         }
-        int mask = right.getRightMask();
-        int newRight = mask & ~rightMask;
+        right.getRightMask().removeAll(rightMask);
         Database db = session.getDatabase();
-        if (newRight == 0) {
+        if (right.getRightMask().isEmpty()) {
             db.removeDatabaseObject(session, right);
         } else {
-            right.setRightMask(newRight);
             db.updateMeta(session, right);
         }
     }
@@ -222,6 +222,6 @@ public class GrantRevoke extends DefineCommand {
      * @return true if this command is using Rights
      */
     public boolean isRightMode() {
-        return rightMask != 0;
+        return !rightMask.isEmpty();
     }
 }

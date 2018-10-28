@@ -10,42 +10,48 @@ import org.h2.message.Trace;
 import org.h2.schema.Schema;
 import org.h2.table.Table;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 /**
  * An access right. Rights are regular database objects, but have generated
  * names.
  */
 public class Right extends DbObjectBase {
 
+    public enum Grant {
+        SELECT, DELETE, INSERT, UPDATE, ALTER_ANY_SCHEMA
+    }
+
     /**
      * The right bit mask that means: selecting from a table is allowed.
      */
-    public static final int SELECT = 1;
+    public static final Set<Grant> SELECT = EnumSet.of(Grant.SELECT);
 
     /**
      * The right bit mask that means: deleting rows from a table is allowed.
      */
-    public static final int DELETE = 2;
+    public static final Set<Grant> DELETE = EnumSet.of(Grant.DELETE);
 
     /**
      * The right bit mask that means: inserting rows into a table is allowed.
      */
-    public static final int INSERT = 4;
+    public static final Set<Grant> INSERT = EnumSet.of(Grant.INSERT);
 
     /**
      * The right bit mask that means: updating data is allowed.
      */
-    public static final int UPDATE = 8;
+    public static final Set<Grant> UPDATE = EnumSet.of(Grant.UPDATE);
 
     /**
      * The right bit mask that means: create/alter/drop schema is allowed.
      */
-    public static final int ALTER_ANY_SCHEMA = 16;
-
+    public static final Set<Grant> ALTER_ANY_SCHEMA = EnumSet.of(Grant.ALTER_ANY_SCHEMA);
     /**
      * The right bit mask that means: select, insert, update, delete, and update
      * for this object is allowed.
      */
-    public static final int ALL = SELECT | DELETE | INSERT | UPDATE;
+    public static final Set<Grant> ALL = EnumSet.of(Grant.SELECT, Grant.DELETE, Grant.INSERT, Grant.UPDATE);
 
     /**
      * To whom the right is granted.
@@ -60,7 +66,7 @@ public class Right extends DbObjectBase {
     /**
      * The granted right.
      */
-    private int grantedRight;
+    private Set<Grant> grantedRight;
 
     /**
      * The object. If the right is global, this is null.
@@ -73,7 +79,7 @@ public class Right extends DbObjectBase {
         this.grantedRole = grantedRole;
     }
 
-    public Right(Database db, int id, RightOwner grantee, int grantedRight,
+    public Right(Database db, int id, RightOwner grantee, Set<Grant> grantedRight,
             DbObject grantedObject) {
         super(db, id, Integer.toString(id), Trace.USER);
         this.grantee = grantee;
@@ -81,9 +87,9 @@ public class Right extends DbObjectBase {
         this.grantedObject = grantedObject;
     }
 
-    private static boolean appendRight(StringBuilder buff, int right, int mask,
-            String name, boolean comma) {
-        if ((right & mask) != 0) {
+    private static boolean appendRight(StringBuilder buff, Set<Grant> right, Grant mask,
+                                       String name, boolean comma) {
+        if (right.contains(mask)) {
             if (comma) {
                 buff.append(", ");
             }
@@ -95,16 +101,16 @@ public class Right extends DbObjectBase {
 
     public String getRights() {
         StringBuilder buff = new StringBuilder();
-        if (grantedRight == ALL) {
+        if (grantedRight.equals(ALL)) {
             buff.append("ALL");
         } else {
             boolean comma = false;
-            comma = appendRight(buff, grantedRight, SELECT, "SELECT", comma);
-            comma = appendRight(buff, grantedRight, DELETE, "DELETE", comma);
-            comma = appendRight(buff, grantedRight, INSERT, "INSERT", comma);
-            comma = appendRight(buff, grantedRight, ALTER_ANY_SCHEMA,
+            comma = appendRight(buff, grantedRight, Grant.SELECT, "SELECT", comma);
+            comma = appendRight(buff, grantedRight, Grant.DELETE, "DELETE", comma);
+            comma = appendRight(buff, grantedRight, Grant.INSERT, "INSERT", comma);
+            comma = appendRight(buff, grantedRight, Grant.ALTER_ANY_SCHEMA,
                     "ALTER ANY SCHEMA", comma);
-            appendRight(buff, grantedRight, UPDATE, "UPDATE", comma);
+            appendRight(buff, grantedRight, Grant.UPDATE, "UPDATE", comma);
         }
         return buff.toString();
     }
@@ -179,11 +185,11 @@ public class Right extends DbObjectBase {
         DbException.throwInternalError();
     }
 
-    public void setRightMask(int rightMask) {
+    public void setRightMask(Set<Grant> rightMask) {
         grantedRight = rightMask;
     }
 
-    public int getRightMask() {
+    public Set<Grant> getRightMask() {
         return grantedRight;
     }
 
